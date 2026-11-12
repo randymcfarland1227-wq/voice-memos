@@ -1,0 +1,9 @@
+# Voice Memos
+
+A phone voice-memo recorder that syncs every saved recording into **Randy's Life Hub → Self inbox**.
+
+- Live: https://randymcfarland1227-wq.github.io/voice-memos/ — add it to the home screen.
+- Plain HTML/JS (`index.html`), no build step. Push to `main` = live (GitHub Pages).
+- Sync: recording → IndexedDB queue (works offline) → Life Hub Worker `PUT /api/files` → `PUT /api/state` with one capture `{ kind: 'voice', focusAreaId: 'self', audio: { fileId, type, seconds, size } }`.
+- Auth: the Life Hub backup key. Same github.io origin as Life Hub, so in the same browser it's picked up automatically; a home-screen app asks once for Life Hub's "Link another device" link.
+- Life Hub shows a Play button for these (frontier-next `app/components/VoicePlayer.tsx`).
