@@ -14,7 +14,7 @@
 <link rel="icon" href="favicon.svg">
 <style>
   :root {
-    --bg: #14110f; --card: #201b18; --line: #3a312b; --ink: #f4ece4; --mute: #a8998c;
+    --bg: #14110f; --card: #1f1a17; --card2: #29221e; --line: #3a312b; --ink: #f4ece4; --mute: #a8998c;
     --rec: #ff5a3c; --rec-soft: rgba(255, 90, 60, .16); --ok: #45c08a; --warn: #f2b84b; --tint: #f08a4b;
     color-scheme: dark;
   }
@@ -22,61 +22,88 @@
   html, body { margin: 0; background: var(--bg); color: var(--ink); }
   body {
     font: 16px/1.4 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
-    min-height: 100dvh; padding: max(16px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
-    display: flex; flex-direction: column; gap: 18px; max-width: 520px; margin: 0 auto;
+    min-height: 100dvh; padding: max(14px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+    display: flex; flex-direction: column; gap: 16px; max-width: 560px; margin: 0 auto;
     -webkit-tap-highlight-color: transparent;
   }
+  button { font-family: inherit; }
   header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-  h1 { font-size: 20px; font-weight: 600; margin: 0; letter-spacing: -.01em; }
+  h1 { font-size: 22px; font-weight: 650; margin: 0; letter-spacing: -.015em; }
   .pill { font-size: 12px; padding: 4px 10px; border-radius: 999px; background: var(--card); color: var(--mute); border: 1px solid var(--line); white-space: nowrap; }
   .pill.ok { color: var(--ok); } .pill.warn { color: var(--warn); }
   a { color: var(--tint); }
 
-  .stage { background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 22px 18px 20px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
-  .timer { font: 600 44px/1 ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: .02em; font-variant-numeric: tabular-nums; }
-  .hint { color: var(--mute); font-size: 14px; text-align: center; min-height: 20px; margin: 0; }
-  canvas { width: 100%; height: 56px; display: block; }
-  .rec {
-    width: 96px; height: 96px; border-radius: 50%; border: 4px solid var(--ink); background: transparent;
-    display: grid; place-items: center; cursor: pointer; padding: 0; touch-action: manipulation;
-  }
-  .rec span { width: 70px; height: 70px; border-radius: 50%; background: var(--rec); transition: all .18s ease; }
-  .rec.on span { width: 36px; height: 36px; border-radius: 9px; }
-  .rec.on { box-shadow: 0 0 0 10px var(--rec-soft); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+
+  /* details */
+  .subject { font-size: 19px; font-weight: 600; background: transparent; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; padding: 4px 0 10px; color: var(--ink); width: 100%; font-family: inherit; }
+  .subject:focus { outline: none; border-bottom-color: var(--tint); }
+  .subject::placeholder { color: #6f6359; font-weight: 500; }
+  .chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin: 0 -16px; padding: 0 16px; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip { flex: none; min-height: 34px; padding: 6px 13px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--mute); font-size: 14px; cursor: pointer; }
+  .chip[aria-pressed="true"] { background: var(--tint); border-color: var(--tint); color: #1a0f08; font-weight: 600; }
+  .when { display: flex; align-items: center; gap: 10px; }
+  .when label { font-size: 13px; color: var(--mute); white-space: nowrap; }
+  .when input { flex: 1; min-width: 0; font: inherit; font-size: 15px; color: var(--ink); background: var(--card2); border: 1px solid var(--line); border-radius: 12px; padding: 8px 6px; color-scheme: dark; }
+  .mini { min-height: 36px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--line); background: transparent; color: var(--ink); font-size: 14px; cursor: pointer; }
+
+  /* recorder */
+  .recorder { background: var(--card2); border-radius: 18px; padding: 16px 14px 14px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .timer { font: 600 40px/1 ui-monospace, "SF Mono", Menlo, monospace; font-variant-numeric: tabular-nums; }
+  .timer.paused { animation: blink 1.2s steps(2) infinite; }
+  @keyframes blink { 50% { opacity: .35; } }
+  canvas { width: 100%; height: 48px; display: block; }
+  .controls { display: flex; align-items: center; justify-content: center; gap: 22px; width: 100%; }
+  .side { width: 52px; height: 52px; border-radius: 50%; border: 1px solid var(--line); background: transparent; color: var(--ink); font-size: 13px; cursor: pointer; display: grid; place-items: center; }
+  .side:disabled { opacity: .25; cursor: default; }
+  .side svg { width: 20px; height: 20px; }
+  .rec { width: 84px; height: 84px; border-radius: 50%; border: 4px solid var(--ink); background: transparent; display: grid; place-items: center; cursor: pointer; padding: 0; touch-action: manipulation; }
+  .rec span { width: 62px; height: 62px; border-radius: 50%; background: var(--rec); transition: all .18s ease; }
+  .rec.on span { width: 30px; height: 30px; border-radius: 8px; }
+  .rec.on { box-shadow: 0 0 0 9px var(--rec-soft); }
   .rec:disabled { opacity: .4; }
-  .live { width: 100%; color: var(--mute); font-size: 15px; min-height: 0; white-space: pre-wrap; }
-  .live:empty { display: none; }
+  .hint { color: var(--mute); font-size: 14px; text-align: center; margin: 0; min-height: 20px; }
+  .take { display: none; width: 100%; }
+  .take.show { display: block; }
+  .take audio { width: 100%; height: 40px; }
   .toggle { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--mute); }
   .toggle input { width: 18px; height: 18px; accent-color: var(--tint); }
 
-  .review { display: none; flex-direction: column; gap: 12px; background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 16px; }
-  .review.show { display: flex; }
-  .review audio { width: 100%; }
-  label.f { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--mute); }
-  input[type=text], textarea {
-    width: 100%; font: inherit; font-size: 16px; color: var(--ink); background: var(--bg);
-    border: 1px solid var(--line); border-radius: 12px; padding: 11px 12px;
-  }
-  textarea { min-height: 84px; resize: vertical; }
-  .row { display: flex; gap: 10px; }
-  button.btn { flex: 1; min-height: 48px; font: 600 16px/1 inherit; font-family: inherit; border-radius: 14px; border: 1px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; }
-  button.btn.main { background: var(--tint); border-color: var(--tint); color: #1a0f08; }
+  textarea { width: 100%; font: inherit; font-size: 16px; color: var(--ink); background: var(--card2); border: 1px solid var(--line); border-radius: 14px; padding: 11px 12px; min-height: 92px; resize: vertical; }
+  textarea::placeholder, input::placeholder { color: #6f6359; }
+  .actions { display: flex; gap: 10px; }
+  .btn { flex: 1; min-height: 50px; font-size: 16px; font-weight: 600; border-radius: 15px; border: 1px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; }
+  .btn.main { flex: 2; background: var(--tint); border-color: var(--tint); color: #1a0f08; }
+  .btn:disabled { opacity: .35; cursor: default; }
 
   .link { display: none; flex-direction: column; gap: 10px; background: var(--card); border: 1px solid var(--warn); border-radius: 18px; padding: 16px; }
   .link.show { display: flex; }
   .link p { margin: 0; font-size: 14px; color: var(--mute); }
   .link b { color: var(--ink); font-weight: 600; }
+  .link input { font: inherit; font-size: 16px; color: var(--ink); background: var(--card2); border: 1px solid var(--line); border-radius: 12px; padding: 11px 12px; }
 
-  h2 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--mute); margin: 4px 0 -8px; }
-  ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-  li { display: flex; align-items: center; gap: 12px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; }
-  li .t { flex: 1; min-width: 0; }
-  li .t div:first-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  li .m { font-size: 12px; color: var(--mute); }
-  li .s { font-size: 12px; white-space: nowrap; }
-  li .s.ok { color: var(--ok); } li .s.wait { color: var(--warn); } li .s.bad { color: var(--rec); }
-  .empty { color: var(--mute); font-size: 14px; text-align: center; padding: 10px; }
-  footer { margin-top: auto; text-align: center; font-size: 13px; color: var(--mute); }
+  /* recent */
+  .recent-h { display: flex; align-items: baseline; justify-content: space-between; margin: 6px 2px -4px; }
+  .recent-h h2 { font-size: 17px; font-weight: 650; margin: 0; }
+  .recent-h span { font-size: 13px; color: var(--mute); }
+  .day { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--mute); margin: 8px 2px 6px; display: flex; gap: 8px; align-items: center; }
+  .day::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+  .memo { background: var(--card); border: 1px solid var(--line); border-radius: 16px; margin-bottom: 8px; overflow: hidden; }
+  .memo > button { all: unset; box-sizing: border-box; width: 100%; display: flex; align-items: center; gap: 12px; padding: 11px 13px; cursor: pointer; }
+  .memo .ic { flex: none; width: 34px; height: 34px; border-radius: 50%; background: var(--card2); display: grid; place-items: center; color: var(--tint); }
+  .memo .ic svg { width: 16px; height: 16px; }
+  .memo .t { flex: 1; min-width: 0; }
+  .memo .t b { display: block; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .memo .t small { display: block; font-size: 12px; color: var(--mute); margin-top: 1px; }
+  .memo .s { font-size: 12px; white-space: nowrap; }
+  .s.ok { color: var(--ok); } .s.wait { color: var(--warn); } .s.bad { color: var(--rec); }
+  .memo .more { display: none; padding: 0 13px 13px 59px; flex-direction: column; gap: 8px; font-size: 14px; color: var(--mute); white-space: pre-wrap; }
+  .memo.open .more { display: flex; }
+  .memo .more audio { width: 100%; height: 38px; }
+  .tag { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 999px; background: var(--card2); color: var(--ink); margin-right: 6px; }
+  .empty { color: var(--mute); font-size: 14px; text-align: center; padding: 14px; }
+  footer { margin-top: auto; text-align: center; font-size: 13px; color: var(--mute); padding-top: 8px; }
 </style>
 </head>
 <body>
@@ -86,33 +113,47 @@
   </header>
 
   <section id="link" class="link" aria-labelledby="link-h">
-    <p id="link-h"><b>Link this to your Life Hub once.</b> On your Mac open Life Hub → Review → backup row → <b>Link another device</b>, copy that link, and paste it here.</p>
+    <p id="link-h"><b>Link this to your Life Hub once.</b> In Life Hub open Review → backup row → <b>Link another device</b>, copy that link, and paste it here.</p>
     <input id="link-in" type="text" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Paste the Link another device link">
-    <div class="row"><button id="link-go" class="btn main" type="button">Link</button></div>
+    <div class="actions"><button id="link-go" class="btn main" type="button">Link</button></div>
     <p id="link-msg" role="status"></p>
   </section>
 
-  <section class="stage" aria-label="Recorder">
-    <div class="timer" id="timer" aria-live="off">0:00</div>
-    <canvas id="wave" width="600" height="112" aria-hidden="true"></canvas>
-    <button id="rec" class="rec" type="button" aria-label="Start recording"><span></span></button>
-    <p class="hint" id="hint" role="status">Tap to record</p>
-    <div class="live" id="live" aria-live="polite"></div>
-    <label class="toggle" id="tx-wrap" hidden><input type="checkbox" id="tx"> Live transcript (beta)</label>
-  </section>
+  <section class="card" aria-label="New memo">
+    <input id="subject" class="subject" type="text" maxlength="140" placeholder="Subject (optional)" autocomplete="off">
+    <div class="chips" id="types" role="group" aria-label="Type (optional)"></div>
+    <div class="when">
+      <label for="when">Logged for</label>
+      <input id="when" type="datetime-local">
+      <button id="now" class="mini" type="button">Now</button>
+    </div>
 
-  <section class="review" id="review" aria-label="Save memo">
-    <audio id="play" controls preload="metadata"></audio>
-    <label class="f">Title<input type="text" id="title" maxlength="140" placeholder="What's this about?"></label>
-    <label class="f">Notes / transcript<textarea id="notes" placeholder="Optional"></textarea></label>
-    <div class="row">
-      <button class="btn" id="discard" type="button">Discard</button>
-      <button class="btn main" id="save" type="button">Save to Self</button>
+    <div class="recorder" aria-label="Recorder">
+      <div class="timer" id="timer">0:00</div>
+      <canvas id="wave" width="600" height="96" aria-hidden="true"></canvas>
+      <div class="controls">
+        <button id="redo" class="side" type="button" aria-label="Delete recording" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>
+        </button>
+        <button id="rec" class="rec" type="button" aria-label="Start recording"><span></span></button>
+        <button id="pause" class="side" type="button" aria-label="Pause" disabled>
+          <svg id="pause-ic" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+        </button>
+      </div>
+      <p class="hint" id="hint" role="status">Tap to record — or just type a memo below</p>
+      <div class="take" id="take"><audio id="play" controls preload="metadata"></audio></div>
+      <label class="toggle" id="tx-wrap" hidden><input type="checkbox" id="tx"> Live transcript (beta)</label>
+    </div>
+
+    <textarea id="notes" placeholder="Notes or transcript (optional)"></textarea>
+    <div class="actions">
+      <button class="btn" id="clear" type="button">Clear</button>
+      <button class="btn main" id="save" type="button" disabled>Save to Self</button>
     </div>
   </section>
 
-  <h2>Recent</h2>
-  <ul id="recent"></ul>
+  <div class="recent-h"><h2>Recent</h2><span id="recent-n"></span></div>
+  <div id="recent"></div>
 
   <footer><a href="/frontier-next/">Open Life Hub</a></footer>
 
@@ -124,22 +165,40 @@
   const STATE_URL = WORKER + '/api/state';
   const MAX_BYTES = 9_800_000; // Worker file cap is 10 MB
   const KEY_RE = /^[0-9a-f]{24,}$/i;
-  const SYNC_LS = 'lifehub-sync';      // same storage Life Hub uses (same origin)
+  const SYNC_LS = 'lifehub-sync';      // same storage Life Hub uses (same github.io origin)
   const COOKIE = 'lifehub_sync_key';
   const RECENT_LS = 'lifehub-memo-recent';
   const TX_LS = 'lifehub-memo-transcript';
+  const TYPES = ['Thought', 'Idea', 'To-do', 'Journal', 'Meeting', 'Reminder'];
+  const MIC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3"/></svg>';
+  const PEN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
 
   const $ = id => document.getElementById(id);
   const ui = {
     status: $('status'), link: $('link'), linkIn: $('link-in'), linkGo: $('link-go'), linkMsg: $('link-msg'),
-    timer: $('timer'), wave: $('wave'), rec: $('rec'), hint: $('hint'), live: $('live'),
-    txWrap: $('tx-wrap'), tx: $('tx'), review: $('review'), play: $('play'), title: $('title'),
-    notes: $('notes'), discard: $('discard'), save: $('save'), recent: $('recent'),
+    subject: $('subject'), types: $('types'), when: $('when'), now: $('now'),
+    timer: $('timer'), wave: $('wave'), rec: $('rec'), pause: $('pause'), pauseIc: $('pause-ic'), redo: $('redo'),
+    hint: $('hint'), take: $('take'), play: $('play'), txWrap: $('tx-wrap'), tx: $('tx'),
+    notes: $('notes'), clear: $('clear'), save: $('save'), recent: $('recent'), recentN: $('recent-n'),
   };
 
-  /* ---------- backup key (shared with Life Hub on this origin) ---------- */
+  /* ---------- small helpers ---------- */
   function readLs(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } }
   function writeLs(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* full or blocked */ } }
+  const pad = n => String(n).padStart(2, '0');
+  const localInput = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  const clock = sec => { const s = Math.max(0, Math.round(sec)); return Math.floor(s / 60) + ':' + pad(s % 60); };
+  const dayKey = iso => localInput(new Date(iso)).slice(0, 10);
+  function dayLabel(key) {
+    const t = dayKey(new Date().toISOString()), y = new Date(); y.setDate(y.getDate() - 1);
+    if (key === t) return 'Today';
+    if (key === dayKey(y.toISOString())) return 'Yesterday';
+    const [Y, M, D] = key.split('-').map(Number);
+    return new Date(Y, M - 1, D).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+  }
+  const timeOf = iso => new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+
+  /* ---------- backup key (shared with Life Hub on this origin) ---------- */
   function openVault() {
     return new Promise(res => {
       try {
@@ -169,15 +228,14 @@
     openVault().then(db => { try { db && db.transaction('kv', 'readwrite').objectStore('kv').put(key, 'key'); } catch {} });
   }
   let KEY = '';
-
   function setStatus(text, cls) { ui.status.textContent = text; ui.status.className = 'pill' + (cls ? ' ' + cls : ''); }
-
   async function checkKey(key) {
-    // Cheap check: ask for a file that doesn't exist — 404 means the key was accepted, 401 means refused.
+    // Cheap check: a file that doesn't exist — 404 means the key was accepted, 401 means refused.
     const r = await fetch(FILES_URL + '/00000000-0000-0000-0000-000000000000', { headers: { 'X-Sync-Key': key }, cache: 'no-store' });
     if (r.status === 401) return 'wrong';
     return r.status === 404 || r.ok ? 'ok' : 'down';
   }
+  function needLink() { KEY = ''; ui.link.classList.add('show'); setStatus('Not linked', 'warn'); }
 
   ui.linkGo.addEventListener('click', async () => {
     const raw = ui.linkIn.value.trim();
@@ -186,9 +244,8 @@
     if (!KEY_RE.test(key)) { ui.linkMsg.textContent = 'That doesn’t look like the Life Hub link. Copy “Link another device” again.'; return; }
     ui.linkMsg.textContent = 'Checking…';
     try {
-      const ok = await checkKey(key);
-      if (ok === 'wrong') { ui.linkMsg.textContent = 'Life Hub refused that key. Copy a fresh “Link another device” link.'; return; }
-      saveKey(key); KEY = key; ui.link.classList.remove('show'); ui.linkIn.value = '';
+      if ((await checkKey(key)) === 'wrong') { ui.linkMsg.textContent = 'Life Hub refused that key. Copy a fresh “Link another device” link.'; return; }
+      saveKey(key); KEY = key; ui.link.classList.remove('show'); ui.linkIn.value = ''; ui.linkMsg.textContent = '';
       setStatus('Linked', 'ok'); flush();
     } catch { ui.linkMsg.textContent = 'No connection right now. Try again in a moment.'; }
   });
@@ -216,28 +273,59 @@
     return new Promise(res => { const t = db.transaction('queue', 'readwrite'); t.objectStore('queue').delete(id); t.oncomplete = res; t.onerror = res; });
   }
 
-  /* ---------- recent list ---------- */
-  function clock(sec) { const s = Math.max(0, Math.round(sec)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
-  function when(iso) { return new Date(iso).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }); }
+  /* ---------- recent list (grouped by logged day, tap to open) ---------- */
+  const openRows = new Set();
+  async function playFrom(row, box) {
+    let blob = row.blob;
+    if (!blob && row.fileId && KEY) {
+      const r = await fetch(FILES_URL + '/' + row.fileId, { headers: { 'X-Sync-Key': KEY }, cache: 'no-store' });
+      if (r.ok) blob = await r.blob();
+    }
+    if (!blob) { box.textContent = 'Recording not available on this device.'; return; }
+    const a = document.createElement('audio');
+    a.controls = true; a.src = URL.createObjectURL(blob); box.replaceWith(a); a.play().catch(() => {});
+  }
   async function renderRecent() {
     const pending = await qAll();
     const done = readLs(RECENT_LS, []);
     const rows = [
       ...pending.map(p => ({ ...p, state: p.error ? 'bad' : 'wait' })),
       ...done.filter(d => !pending.some(p => p.id === d.id)).map(d => ({ ...d, state: 'ok' })),
-    ].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 15);
+    ].sort((a, b) => (b.loggedAt || b.createdAt).localeCompare(a.loggedAt || a.createdAt)).slice(0, 25);
+    ui.recentN.textContent = pending.length ? pending.length + ' waiting to sync' : rows.length ? 'all in Self' : '';
     ui.recent.innerHTML = '';
-    if (!rows.length) { ui.recent.innerHTML = '<li class="empty">Saved memos show here.</li>'; return; }
+    if (!rows.length) { ui.recent.innerHTML = '<p class="empty">Saved memos show here and in Life Hub → Self → Voice memos.</p>'; return; }
+    let lastDay = '';
     for (const r of rows) {
-      const li = document.createElement('li');
-      const t = document.createElement('div'); t.className = 't';
-      const a = document.createElement('div'); a.textContent = r.title;
-      const m = document.createElement('div'); m.className = 'm'; m.textContent = when(r.createdAt) + ' · ' + clock(r.seconds);
-      t.append(a, m);
+      const k = dayKey(r.loggedAt || r.createdAt);
+      if (k !== lastDay) {
+        const h = document.createElement('div'); h.className = 'day'; h.textContent = dayLabel(k); ui.recent.append(h); lastDay = k;
+      }
+      const wrap = document.createElement('div'); wrap.className = 'memo' + (openRows.has(r.id) ? ' open' : '');
+      const head = document.createElement('button'); head.type = 'button'; head.setAttribute('aria-expanded', openRows.has(r.id));
+      const ic = document.createElement('span'); ic.className = 'ic'; ic.innerHTML = r.seconds ? MIC : PEN;
+      const t = document.createElement('span'); t.className = 't';
+      const b = document.createElement('b'); b.textContent = r.title;
+      const sm = document.createElement('small');
+      sm.textContent = timeOf(r.loggedAt || r.createdAt) + (r.seconds ? ' · ' + clock(r.seconds) : ' · typed') + (r.memoType ? ' · ' + r.memoType : '');
+      t.append(b, sm);
       const s = document.createElement('span'); s.className = 's ' + r.state;
-      s.textContent = r.state === 'ok' ? '✓ In Self' : r.state === 'bad' ? 'Retrying' : 'Waiting to sync';
+      s.textContent = r.state === 'ok' ? '✓ In Self' : r.state === 'bad' ? 'Retrying' : 'Waiting';
       if (r.error) s.title = r.error;
-      li.append(t, s); ui.recent.append(li);
+      head.append(ic, t, s);
+      const more = document.createElement('div'); more.className = 'more';
+      if (r.notes) { const n = document.createElement('div'); n.textContent = r.notes; more.append(n); }
+      if (r.seconds) {
+        const p = document.createElement('button'); p.type = 'button'; p.className = 'mini'; p.textContent = '▶ Play';
+        p.addEventListener('click', () => { p.textContent = 'Loading…'; playFrom(r, p); });
+        more.append(p);
+      }
+      if (!r.notes && !r.seconds) more.textContent = 'No notes.';
+      head.addEventListener('click', () => {
+        openRows.has(r.id) ? openRows.delete(r.id) : openRows.add(r.id);
+        wrap.classList.toggle('open'); head.setAttribute('aria-expanded', wrap.classList.contains('open'));
+      });
+      wrap.append(head, more); ui.recent.append(wrap);
     }
   }
 
@@ -249,7 +337,7 @@
     try {
       for (const item of await qAll()) {
         try {
-          if (!item.fileId) {
+          if (item.blob && !item.fileId) {
             const r = await fetch(FILES_URL, {
               method: 'PUT',
               headers: { 'X-Sync-Key': KEY, 'Content-Type': item.type, 'X-File-Name': encodeURIComponent(item.fileName) },
@@ -263,7 +351,8 @@
           const capture = {
             id: item.id, kind: 'voice', title: item.title, notes: item.notes || undefined,
             focusAreaId: 'self', status: 'inbox', createdAt: item.createdAt,
-            audio: { fileId: item.fileId, type: item.type, seconds: Math.round(item.seconds), size: item.blob.size },
+            loggedAt: item.loggedAt, memoType: item.memoType || undefined,
+            audio: item.fileId ? { fileId: item.fileId, type: item.type, seconds: Math.round(item.seconds), size: item.blob.size } : undefined,
           };
           const r2 = await fetch(STATE_URL, {
             method: 'PUT', headers: { 'X-Sync-Key': KEY, 'Content-Type': 'application/json' },
@@ -271,12 +360,13 @@
           });
           if (r2.status === 401) throw new Error('wrong_key');
           if (!r2.ok) throw new Error('save ' + r2.status);
-          const done = readLs(RECENT_LS, []).filter(d => d.id !== item.id);
-          done.unshift({ id: item.id, title: item.title, seconds: item.seconds, createdAt: item.createdAt });
-          writeLs(RECENT_LS, done.slice(0, 30));
+          const keep = readLs(RECENT_LS, []).filter(d => d.id !== item.id);
+          keep.unshift({ id: item.id, title: item.title, notes: item.notes, memoType: item.memoType, seconds: item.seconds,
+            createdAt: item.createdAt, loggedAt: item.loggedAt, fileId: item.fileId });
+          writeLs(RECENT_LS, keep.slice(0, 40));
           await qDel(item.id);
         } catch (e) {
-          if (String(e.message) === 'wrong_key') { KEY = ''; ui.link.classList.add('show'); setStatus('Not linked', 'warn'); break; }
+          if (String(e.message) === 'wrong_key') { needLink(); break; }
           item.error = String(e.message || e); await qPut(item).catch(() => {});
         }
       }
@@ -291,6 +381,23 @@
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') flush(); });
   setInterval(() => { qAll().then(q => { if (q.length) flush(); }); }, 30_000);
 
+  /* ---------- details: type chips + logged date/time ---------- */
+  let memoType = '';
+  for (const t of TYPES) {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'chip'; b.textContent = t; b.setAttribute('aria-pressed', 'false');
+    b.addEventListener('click', () => {
+      memoType = memoType === t ? '' : t;
+      [...ui.types.children].forEach(c => c.setAttribute('aria-pressed', String(c.textContent === memoType)));
+    });
+    ui.types.append(b);
+  }
+  let whenTouched = false;
+  const setNow = () => { ui.when.value = localInput(new Date()); };
+  setNow();
+  setInterval(() => { if (!whenTouched && document.visibilityState === 'visible') setNow(); }, 20_000);
+  ui.when.addEventListener('input', () => { whenTouched = true; });
+  ui.now.addEventListener('click', () => { whenTouched = false; setNow(); });
+
   /* ---------- recording ---------- */
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -301,9 +408,14 @@
     ui.tx.addEventListener('change', () => writeLs(TX_LS, ui.tx.checked));
   }
 
-  let rec = null, stream = null, chunks = [], bytes = 0, startedAt = 0, tick = 0, raf = 0, actx = null, analyser = null;
-  let recognition = null, finalText = '', interim = '', wantRecognition = false;
-  let draft = null; // { blob, type, seconds, createdAt }
+  let rec = null, stream = null, chunks = [], bytes = 0, elapsed = 0, runFrom = 0, tick = 0, raf = 0, actx = null, analyser = null;
+  let recognition = null, heard = '', wantRecognition = false, notesBefore = '';
+  let take = null; // { blob, type, seconds, startedAt }
+
+  const seconds = () => elapsed + (runFrom ? (Date.now() - runFrom) / 1000 : 0);
+  function refreshSave() { ui.save.disabled = !(take || ui.subject.value.trim() || ui.notes.value.trim()) || Boolean(rec); }
+  ui.subject.addEventListener('input', refreshSave);
+  ui.notes.addEventListener('input', refreshSave);
 
   function pickType() {
     const types = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus'];
@@ -314,36 +426,36 @@
   function drawWave() {
     const c = ui.wave, g = c.getContext('2d');
     g.clearRect(0, 0, c.width, c.height);
-    if (analyser) {
-      const data = new Uint8Array(analyser.frequencyBinCount);
-      analyser.getByteTimeDomainData(data);
-      const bars = 48, w = c.width / bars;
-      g.fillStyle = '#ff5a3c';
-      for (let i = 0; i < bars; i++) {
-        let peak = 0;
+    const bars = 48, w = c.width / bars;
+    g.fillStyle = rec && rec.state === 'recording' ? '#ff5a3c' : '#4a3f37';
+    const data = analyser ? new Uint8Array(analyser.frequencyBinCount) : null;
+    if (data) analyser.getByteTimeDomainData(data);
+    for (let i = 0; i < bars; i++) {
+      let peak = 0;
+      if (data && rec && rec.state === 'recording') {
         const from = Math.floor(i * data.length / bars), to = Math.floor((i + 1) * data.length / bars);
         for (let j = from; j < to; j++) peak = Math.max(peak, Math.abs(data[j] - 128));
-        const h = Math.max(4, (peak / 128) * c.height * 1.6);
-        g.fillRect(i * w + 2, (c.height - Math.min(h, c.height)) / 2, w - 4, Math.min(h, c.height));
       }
-      raf = requestAnimationFrame(drawWave);
+      const h = Math.min(c.height, Math.max(6, (peak / 128) * c.height * 1.6));
+      g.fillRect(i * w + 2, (c.height - h) / 2, w - 4, h);
     }
+    if (analyser) raf = requestAnimationFrame(drawWave);
   }
 
   function startRecognition() {
     if (!SR || !ui.tx.checked) return;
-    wantRecognition = true; finalText = ''; interim = '';
+    wantRecognition = true;
     try {
       recognition = new SR();
       recognition.continuous = true; recognition.interimResults = true; recognition.lang = 'en-US';
       recognition.onresult = e => {
-        interim = '';
+        let interim = '';
         for (let i = e.resultIndex; i < e.results.length; i++) {
           const r = e.results[i];
-          if (r.isFinal) finalText += (finalText ? ' ' : '') + r[0].transcript.trim();
+          if (r.isFinal) heard += (heard ? ' ' : '') + r[0].transcript.trim();
           else interim += r[0].transcript;
         }
-        ui.live.textContent = (finalText + ' ' + interim).trim();
+        ui.notes.value = [notesBefore, (heard + ' ' + interim).trim()].filter(Boolean).join('\n');
       };
       recognition.onend = () => { if (wantRecognition) { try { recognition.start(); } catch {} } };
       recognition.onerror = e => { if (e.error === 'not-allowed' || e.error === 'service-not-allowed') wantRecognition = false; };
@@ -353,8 +465,8 @@
   function stopRecognition() { wantRecognition = false; try { recognition && recognition.stop(); } catch {} }
 
   async function start() {
-    if (draft && !confirm('Discard the unsaved memo and record a new one?')) return;
-    hideReview();
+    if (take && !confirm('Replace the recording you already have?')) return;
+    dropTake();
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
     } catch {
@@ -362,99 +474,131 @@
       return;
     }
     const type = pickType();
-    try {
-      rec = new MediaRecorder(stream, type ? { mimeType: type, audioBitsPerSecond: 48000 } : undefined);
-    } catch { rec = new MediaRecorder(stream); }
-    chunks = []; bytes = 0;
+    try { rec = new MediaRecorder(stream, type ? { mimeType: type, audioBitsPerSecond: 48000 } : undefined); }
+    catch { rec = new MediaRecorder(stream); }
+    chunks = []; bytes = 0; elapsed = 0; heard = ''; notesBefore = ui.notes.value.trim();
     rec.ondataavailable = e => {
       if (e.data && e.data.size) { chunks.push(e.data); bytes += e.data.size; }
-      if (bytes > MAX_BYTES && rec.state === 'recording') { ui.hint.textContent = 'Reached the size limit — saved what you have.'; stop(); }
+      if (bytes > MAX_BYTES && rec && rec.state !== 'inactive') { ui.hint.textContent = 'Reached the size limit — kept what you have.'; stop(); }
     };
     rec.onstop = finish;
     rec.start(1000);
-    startedAt = Date.now();
+    runFrom = Date.now();
     try {
       actx = new (window.AudioContext || window.webkitAudioContext)();
       const src = actx.createMediaStreamSource(stream);
       analyser = actx.createAnalyser(); analyser.fftSize = 1024; src.connect(analyser);
-      drawWave();
     } catch { analyser = null; }
-    tick = setInterval(() => { ui.timer.textContent = clock((Date.now() - startedAt) / 1000); }, 250);
+    drawWave();
+    tick = setInterval(() => { ui.timer.textContent = clock(seconds()); }, 250);
     ui.rec.classList.add('on'); ui.rec.setAttribute('aria-label', 'Stop recording');
-    ui.hint.textContent = 'Recording… tap to stop'; ui.live.textContent = '';
+    ui.pause.disabled = !rec.pause; ui.redo.disabled = true;
+    ui.hint.textContent = 'Recording… tap the square to stop';
+    refreshSave();
     startRecognition();
-    try { navigator.wakeLock && (window.__lock = await navigator.wakeLock.request('screen')); } catch {}
+    try { if (navigator.wakeLock) window.__lock = await navigator.wakeLock.request('screen'); } catch {}
+  }
+
+  function togglePause() {
+    if (!rec) return;
+    if (rec.state === 'recording') {
+      rec.pause(); elapsed = seconds(); runFrom = 0; stopRecognition();
+      ui.timer.classList.add('paused'); ui.hint.textContent = 'Paused — tap ▶ to keep going, or the square to finish';
+      ui.pauseIc.innerHTML = '<path d="M8 5v14l11-7z"/>'; ui.pause.setAttribute('aria-label', 'Resume');
+    } else if (rec.state === 'paused') {
+      rec.resume(); runFrom = Date.now(); startRecognition();
+      ui.timer.classList.remove('paused'); ui.hint.textContent = 'Recording… tap the square to stop';
+      ui.pauseIc.innerHTML = '<rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/>'; ui.pause.setAttribute('aria-label', 'Pause');
+    }
   }
 
   function stop() {
     if (!rec || rec.state === 'inactive') return;
     stopRecognition();
+    elapsed = seconds(); runFrom = 0;
     rec.stop();
   }
 
   function finish() {
     clearInterval(tick); cancelAnimationFrame(raf);
-    const seconds = (Date.now() - startedAt) / 1000;
     stream && stream.getTracks().forEach(t => t.stop());
     try { actx && actx.close(); } catch {}
-    analyser = null; drawWave();
+    analyser = null;
     try { window.__lock && window.__lock.release(); } catch {}
-    ui.rec.classList.remove('on'); ui.rec.setAttribute('aria-label', 'Start recording');
-    const type = (rec.mimeType || chunks[0]?.type || 'audio/mp4').split(';')[0];
+    const type = ((rec && rec.mimeType) || (chunks[0] && chunks[0].type) || 'audio/mp4').split(';')[0];
     const blob = new Blob(chunks, { type });
-    rec = null;
-    if (!blob.size || seconds < 0.8) { ui.hint.textContent = 'Too short — nothing saved. Tap to record.'; ui.timer.textContent = '0:00'; return; }
-    draft = { blob, type, seconds, createdAt: new Date().toISOString() };
-    const text = (finalText + ' ' + interim).trim();
-    ui.play.src = URL.createObjectURL(blob);
-    ui.title.value = text ? text.split(/\s+/).slice(0, 8).join(' ') + (text.split(/\s+/).length > 8 ? '…' : '') : '';
-    ui.notes.value = text;
-    ui.review.classList.add('show');
-    ui.hint.textContent = 'Name it (optional) and save.';
+    rec = null; drawWave();
+    ui.rec.classList.remove('on'); ui.rec.setAttribute('aria-label', 'Start recording');
+    ui.timer.classList.remove('paused');
+    ui.pause.disabled = true; ui.pauseIc.innerHTML = '<rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/>';
+    if (!blob.size || elapsed < 0.8) { ui.hint.textContent = 'Too short — nothing kept.'; ui.timer.textContent = '0:00'; refreshSave(); return; }
+    take = { blob, type, seconds: elapsed };
+    ui.play.src = URL.createObjectURL(blob); ui.take.classList.add('show');
+    ui.redo.disabled = false;
+    ui.timer.textContent = clock(elapsed);
+    ui.hint.textContent = 'Got it. Add a subject if you like, then save.';
+    if (!ui.subject.value.trim() && heard) ui.subject.value = heard.split(/\s+/).slice(0, 8).join(' ') + (heard.split(/\s+/).length > 8 ? '…' : '');
+    refreshSave();
   }
 
-  function hideReview() {
+  function dropTake() {
     if (ui.play.src) URL.revokeObjectURL(ui.play.src);
-    ui.play.removeAttribute('src'); ui.review.classList.remove('show');
-    ui.title.value = ''; ui.notes.value = ''; ui.live.textContent = ''; draft = null;
+    ui.play.removeAttribute('src'); ui.take.classList.remove('show');
+    take = null; ui.redo.disabled = true; ui.timer.textContent = '0:00';
+    refreshSave();
   }
 
-  ui.rec.addEventListener('click', () => (rec && rec.state === 'recording' ? stop() : start()));
-  ui.discard.addEventListener('click', () => {
-    if (!confirm('Discard this memo?')) return;
-    hideReview(); ui.timer.textContent = '0:00'; ui.hint.textContent = 'Tap to record';
+  function resetAll() {
+    dropTake(); ui.subject.value = ''; ui.notes.value = ''; memoType = '';
+    [...ui.types.children].forEach(c => c.setAttribute('aria-pressed', 'false'));
+    whenTouched = false; setNow();
+    ui.hint.textContent = 'Tap to record — or just type a memo below';
+    refreshSave();
+  }
+
+  ui.rec.addEventListener('click', () => (rec ? stop() : start()));
+  ui.pause.addEventListener('click', togglePause);
+  ui.redo.addEventListener('click', () => { if (confirm('Delete this recording? Your subject and notes stay.')) { dropTake(); ui.hint.textContent = 'Recording deleted. Tap to record again.'; } });
+  ui.clear.addEventListener('click', () => {
+    if ((take || ui.subject.value || ui.notes.value) && !confirm('Clear this memo without saving?')) return;
+    resetAll();
   });
   ui.save.addEventListener('click', async () => {
-    if (!draft) return;
-    const ext = draft.type.includes('mp4') ? 'm4a' : draft.type.includes('ogg') ? 'ogg' : 'webm';
-    const stamp = new Date(draft.createdAt);
-    const fallback = 'Voice memo · ' + when(draft.createdAt);
+    if (ui.save.disabled) return;
+    const created = new Date();
+    const logged = ui.when.value ? new Date(ui.when.value) : created;
+    const loggedAt = isNaN(logged) ? created.toISOString() : logged.toISOString();
+    const subject = ui.subject.value.trim();
+    const notes = ui.notes.value.trim();
+    const fallback = (take ? 'Voice memo' : 'Memo') + ' · ' + new Date(loggedAt).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    const ext = take ? (take.type.includes('mp4') ? 'm4a' : take.type.includes('ogg') ? 'ogg' : 'webm') : '';
     const item = {
-      id: 'cap-voice-' + stamp.getTime(),
-      title: ui.title.value.trim() || fallback,
-      notes: ui.notes.value.trim(),
-      blob: draft.blob, type: draft.type, seconds: draft.seconds, createdAt: draft.createdAt,
-      fileName: 'memo-' + stamp.toISOString().slice(0, 16).replace(/[:T]/g, '-') + '.' + ext,
+      id: 'cap-voice-' + created.getTime(),
+      title: subject || (notes && !take ? notes.split(/\s+/).slice(0, 8).join(' ') : '') || fallback,
+      notes, memoType, loggedAt, createdAt: created.toISOString(),
+      blob: take ? take.blob : null, type: take ? take.type : '', seconds: take ? take.seconds : 0,
+      fileName: take ? 'memo-' + loggedAt.slice(0, 16).replace(/[:T]/g, '-') + '.' + ext : '',
     };
     try { await qPut(item); } catch { alert('Couldn’t keep the memo on this phone. Try again.'); return; }
-    hideReview(); ui.timer.textContent = '0:00';
-    ui.hint.textContent = KEY ? 'Saved — syncing to Self…' : 'Saved on this phone. Link it to Life Hub to sync.';
+    resetAll();
+    ui.hint.textContent = KEY ? 'Saved — sending to Self…' : 'Saved on this phone. Link it to Life Hub to sync.';
     await renderRecent(); flush();
   });
 
   /* ---------- boot ---------- */
+  drawWave();
   if (!window.MediaRecorder || !navigator.mediaDevices) {
-    ui.rec.disabled = true; ui.hint.textContent = 'This browser can’t record audio. Open this page in Safari or Chrome.';
+    ui.rec.disabled = true; ui.hint.textContent = 'This browser can’t record audio — you can still type a memo.';
   }
   (async () => {
     const hash = location.hash.match(/#sync-key=([0-9a-f]{24,})/i);
     if (hash) { saveKey(hash[1]); history.replaceState(null, '', location.pathname); }
     KEY = await readKey();
     renderRecent();
-    if (!KEY) { ui.link.classList.add('show'); setStatus('Not linked', 'warn'); return; }
+    if (!KEY) { needLink(); return; }
     try {
       const ok = await checkKey(KEY);
-      if (ok === 'wrong') { KEY = ''; ui.link.classList.add('show'); setStatus('Not linked', 'warn'); return; }
+      if (ok === 'wrong') { needLink(); return; }
       setStatus(ok === 'ok' ? 'Linked' : 'Offline', ok === 'ok' ? 'ok' : 'warn');
     } catch { setStatus('Offline', 'warn'); }
     flush();
