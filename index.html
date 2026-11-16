@@ -408,10 +408,12 @@
           if (!r2.ok) throw new Error('save ' + r2.status);
           const keep = readLs(RECENT_LS, []).filter(d => d.id !== item.id);
           keep.unshift({ id: item.id, title: item.title, notes: item.notes, memoType: item.memoType, seconds: item.seconds,
-            createdAt: item.createdAt, loggedAt: item.loggedAt, fileId: item.fileId });
+            createdAt: item.createdAt, loggedAt: item.loggedAt, fileId: item.fileId,
+            type: item.type, size: audio ? audio.size : 0, sentAt: Date.now() });
           writeLs(RECENT_LS, keep.slice(0, 40));
           await qDel(item.id);
           sentHint(item.id, true);
+          setTimeout(heal, 80_000);
         } catch (e) {
           if (String(e.message) === 'wrong_key') { needLink(); break; }
           item.error = String(e.message || e); await qPut(item);
@@ -425,8 +427,41 @@
       renderRecent();
     }
   }
+  // The Life Hub server reads, merges and rewrites its whole saved copy on every sync, and its storage
+  // can serve a copy up to a minute old. A sync from another device right after a memo lands can
+  // therefore write the memo back out. Memos are never removed from that copy on purpose, so any sent
+  // memo missing from it was lost this way: send its entry again (the recording itself is still stored).
+  let healing = false;
+  async function heal() {
+    if (healing || !KEY || !navigator.onLine) return;
+    const rows = readLs(RECENT_LS, []).filter(r => !r.sentAt || Date.now() - r.sentAt > 70_000);
+    if (!rows.length) return;
+    healing = true;
+    try {
+      const r = await fetch(STATE_URL, { headers: { 'X-Sync-Key': KEY }, cache: 'no-store' });
+      if (!r.ok) return;
+      const have = new Set((((await r.json()).state || {}).captures || []).map(c => c.id));
+      const lost = rows.filter(row => !have.has(row.id));
+      if (!lost.length) return;
+      const captures = lost.map(row => ({
+        id: row.id, kind: 'voice', title: row.title, notes: row.notes || undefined,
+        focusAreaId: 'self', status: 'inbox', createdAt: row.createdAt,
+        loggedAt: row.loggedAt, memoType: row.memoType || undefined,
+        audio: row.fileId ? { fileId: row.fileId, type: row.type || 'audio/mp4', seconds: Math.round(row.seconds || 0), size: row.size || 0 } : undefined,
+      }));
+      const r2 = await fetch(STATE_URL, {
+        method: 'PUT', headers: { 'X-Sync-Key': KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ state: { captures } }),
+      });
+      if (r2.ok) {
+        const ids = new Set(lost.map(l => l.id));
+        writeLs(RECENT_LS, readLs(RECENT_LS, []).map(d => ids.has(d.id) ? { ...d, sentAt: Date.now() } : d));
+        setTimeout(heal, 80_000);
+      }
+    } catch {} finally { healing = false; }
+  }
   window.addEventListener('online', flush);
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') flush(); });
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { flush(); heal(); } });
   setInterval(() => { qAll().then(q => { if (q.length) flush(); }); }, 30_000);
 
   /* ---------- details: type chips + logged date/time ---------- */
@@ -651,7 +686,7 @@
       if (ok === 'wrong') { needLink(); return; }
       setStatus(ok === 'ok' ? 'Linked' : 'Offline', ok === 'ok' ? 'ok' : 'warn');
     } catch { setStatus('Offline', 'warn'); }
-    flush();
+    flush(); heal();
   })();
 })();
 </script>
