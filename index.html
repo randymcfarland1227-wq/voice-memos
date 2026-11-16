@@ -251,32 +251,69 @@
   });
 
   /* ---------- offline queue (IndexedDB) ---------- */
+  // iPhone Safari often refuses to store a recording Blob in IndexedDB, so the audio is kept
+  // as raw bytes (item.buf). If the phone won't store it at all, the memo is held in memory
+  // and still uploads while this page stays open.
+  let dbP = null;
+  const memQ = new Map();
   function openQ() {
-    return new Promise(res => {
+    if (!dbP) dbP = new Promise(res => {
       try {
         const r = indexedDB.open('lifehub-memos', 1);
         r.onupgradeneeded = () => r.result.createObjectStore('queue', { keyPath: 'id' });
-        r.onsuccess = () => res(r.result); r.onerror = () => res(null);
-      } catch { res(null); }
+        r.onsuccess = () => { r.result.onclose = r.result.onversionchange = () => { try { r.result.close(); } catch {} dbP = null; }; res(r.result); };
+        r.onerror = r.onblocked = () => { dbP = null; res(null); };
+      } catch { dbP = null; res(null); }
+    });
+    return dbP;
+  }
+  const blobOf = item => item.blob || (item.buf ? new Blob([item.buf], { type: item.type }) : null);
+  async function qAll() {
+    const db = await openQ();
+    const stored = !db ? [] : await new Promise(res => {
+      try { const q = db.transaction('queue').objectStore('queue').getAll(); q.onsuccess = () => res(q.result || []); q.onerror = () => res([]); }
+      catch { dbP = null; res([]); }
+    });
+    return [...stored.filter(i => !memQ.has(i.id)), ...memQ.values()];
+  }
+  function idbPut(db, item) {
+    return new Promise((res, rej) => {
+      const t = db.transaction('queue', 'readwrite');
+      t.objectStore('queue').put(item);
+      t.oncomplete = () => res();
+      t.onerror = t.onabort = () => rej(t.error || new Error('storage aborted'));
     });
   }
-  async function qAll() {
-    const db = await openQ(); if (!db) return [];
-    return new Promise(res => { const q = db.transaction('queue').objectStore('queue').getAll(); q.onsuccess = () => res(q.result || []); q.onerror = () => res([]); });
-  }
+  // Resolves true when the memo is stored on the phone, false when it is only held in memory.
   async function qPut(item) {
-    const db = await openQ(); if (!db) throw new Error('no storage');
-    return new Promise((res, rej) => { const t = db.transaction('queue', 'readwrite'); t.objectStore('queue').put(item); t.oncomplete = res; t.onerror = () => rej(t.error); });
+    if (item.blob && !item.buf) {
+      try { item.buf = await item.blob.arrayBuffer(); item.size = item.blob.size; } catch {}
+    }
+    const row = item.buf ? { ...item, blob: null } : item;
+    try {
+      const db = await openQ(); if (!db) throw new Error('no storage');
+      await idbPut(db, row);
+      memQ.delete(item.id);
+      return true;
+    } catch (e) {
+      console.warn('memo kept in memory only:', e);
+      memQ.set(item.id, item);
+      return false;
+    }
   }
   async function qDel(id) {
+    memQ.delete(id);
     const db = await openQ(); if (!db) return;
-    return new Promise(res => { const t = db.transaction('queue', 'readwrite'); t.objectStore('queue').delete(id); t.oncomplete = res; t.onerror = res; });
+    return new Promise(res => {
+      try { const t = db.transaction('queue', 'readwrite'); t.objectStore('queue').delete(id); t.oncomplete = t.onerror = t.onabort = () => res(); }
+      catch { res(); }
+    });
   }
 
   /* ---------- recent list (grouped by logged day, tap to open) ---------- */
   const openRows = new Set();
   async function playFrom(row, box) {
-    let blob = row.blob;
+    let blob = blobOf(row);
     if (!blob && row.fileId && KEY) {
       const r = await fetch(FILES_URL + '/' + row.fileId, { headers: { 'X-Sync-Key': KEY }, cache: 'no-store' });
       if (r.ok) blob = await r.blob();
@@ -337,11 +374,12 @@
     try {
       for (const item of await qAll()) {
         try {
-          if (item.blob && !item.fileId) {
+          const audio = blobOf(item);
+          if (audio && !item.fileId) {
             const r = await fetch(FILES_URL, {
               method: 'PUT',
               headers: { 'X-Sync-Key': KEY, 'Content-Type': item.type, 'X-File-Name': encodeURIComponent(item.fileName) },
-              body: item.blob,
+              body: audio,
             });
             const out = await r.json().catch(() => ({}));
             if (r.status === 401) throw new Error('wrong_key');
@@ -352,7 +390,7 @@
             id: item.id, kind: 'voice', title: item.title, notes: item.notes || undefined,
             focusAreaId: 'self', status: 'inbox', createdAt: item.createdAt,
             loggedAt: item.loggedAt, memoType: item.memoType || undefined,
-            audio: item.fileId ? { fileId: item.fileId, type: item.type, seconds: Math.round(item.seconds), size: item.blob.size } : undefined,
+            audio: item.fileId ? { fileId: item.fileId, type: item.type, seconds: Math.round(item.seconds), size: audio.size } : undefined,
           };
           const r2 = await fetch(STATE_URL, {
             method: 'PUT', headers: { 'X-Sync-Key': KEY, 'Content-Type': 'application/json' },
@@ -367,7 +405,7 @@
           await qDel(item.id);
         } catch (e) {
           if (String(e.message) === 'wrong_key') { needLink(); break; }
-          item.error = String(e.message || e); await qPut(item).catch(() => {});
+          item.error = String(e.message || e); await qPut(item);
         }
       }
     } finally {
@@ -579,9 +617,10 @@
       blob: take ? take.blob : null, type: take ? take.type : '', seconds: take ? take.seconds : 0,
       fileName: take ? 'memo-' + loggedAt.slice(0, 16).replace(/[:T]/g, '-') + '.' + ext : '',
     };
-    try { await qPut(item); } catch { alert('Couldn’t keep the memo on this phone. Try again.'); return; }
+    const stored = await qPut(item);
     resetAll();
-    ui.hint.textContent = KEY ? 'Saved — sending to Self…' : 'Saved on this phone. Link it to Life Hub to sync.';
+    ui.hint.textContent = !stored ? (KEY ? 'Sending to Self — keep this page open until it says Synced.' : 'This phone won’t store memos here. Link it to Life Hub and keep this page open.')
+      : KEY ? 'Saved — sending to Self…' : 'Saved on this phone. Link it to Life Hub to sync.';
     await renderRecent(); flush();
   });
 
