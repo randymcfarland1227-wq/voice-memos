@@ -349,7 +349,7 @@
       t.append(b, sm);
       const s = document.createElement('span'); s.className = 's ' + r.state;
       s.textContent = r.state === 'ok' ? '✓ In Self' : r.state === 'bad' ? 'Retrying' : 'Waiting';
-      if (r.error) s.title = r.error;
+      if (r.error) { s.title = r.error; sm.textContent += ' · not sent: ' + r.error; }
       head.append(ic, t, s);
       const more = document.createElement('div'); more.className = 'more';
       if (r.notes) { const n = document.createElement('div'); n.textContent = r.notes; more.append(n); }
