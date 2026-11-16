@@ -369,6 +369,13 @@
 
   /* ---------- sync: upload recording, then add a Self capture ---------- */
   let flushing = false;
+  let sendingId = '';   // the memo whose "sending…" line is on screen
+  const SENDING = /^(Saved — sending|Sending to Self|Couldn’t send yet)/;
+  function sentHint(id, ok) {
+    if (id !== sendingId || !SENDING.test(ui.hint.textContent)) return;
+    if (ok) { sendingId = ''; ui.hint.innerHTML = '<b style="color:var(--ok)">✓ Sent to Self</b>'; }
+    else ui.hint.textContent = 'Couldn’t send yet — it’s kept here and will retry.';
+  }
   async function flush() {
     if (flushing || !KEY) return;
     flushing = true;
@@ -404,9 +411,11 @@
             createdAt: item.createdAt, loggedAt: item.loggedAt, fileId: item.fileId });
           writeLs(RECENT_LS, keep.slice(0, 40));
           await qDel(item.id);
+          sentHint(item.id, true);
         } catch (e) {
           if (String(e.message) === 'wrong_key') { needLink(); break; }
           item.error = String(e.message || e); await qPut(item);
+          sentHint(item.id, false);
         }
       }
     } finally {
@@ -620,6 +629,7 @@
     };
     const stored = await qPut(item);
     resetAll();
+    sendingId = KEY ? item.id : '';
     ui.hint.textContent = !stored ? (KEY ? 'Sending to Self — keep this page open until it says Synced.' : 'This phone won’t store memos here. Link it to Life Hub and keep this page open.')
       : KEY ? 'Saved — sending to Self…' : 'Saved on this phone. Link it to Life Hub to sync.';
     await renderRecent(); flush();
